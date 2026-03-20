@@ -37,6 +37,35 @@ Everything runs client-side in the browser.
 - Results matrix with threshold-based RIGHT/WRONG decisions
 - Session persistence of uploaded data across pages
 
+<h2>🖥️ Screenshots</h2>
+
+<h3>🏠 Dashboard</h3>
+<p align="center">
+  <img src="./screenshots/dashboard.png" width="800"/>
+</p>
+
+<h3>📊 Channel Selection</h3>
+<p align="center">
+  <img src="./screenshots/channel.png" width="400"/>
+  <img src="./screenshots/channel2.png" width="400"/>
+</p>
+
+<h3>🔄 Signal Transformation</h3>
+<p align="center">
+  <img src="./screenshots/signal.png" width="400"/>
+  <img src="./screenshots/signal2.png" width="400"/>
+</p>
+
+<h3>📈 Performance Metrics</h3>
+<p align="center">
+  <img src="./screenshots/performance.png" width="800"/>
+</p>
+
+<h3>✅ Results & Decisions</h3>
+<p align="center">
+  <img src="./screenshots/result.png" width="800"/>
+</p>
+
 ## Project Structure
 
 ```text
