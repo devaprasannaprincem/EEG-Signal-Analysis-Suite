@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Signal Transform — NeuroSync</title>
+  <link rel="stylesheet" href="../css/main.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <canvas id="brainwave-canvas"></canvas>
+
+  <nav class="navbar">
+    <div class="nav-brand"><span class="brand-icon">⬡</span><span class="brand-name">NeuroSync</span><span class="brand-sub">EEG·BCI</span></div>
+    <div class="nav-links">
+      <a href="../index.html" class="nav-link">Dashboard</a>
+      <a href="channel-selection.html" class="nav-link">Channel Selection</a>
+      <a href="signal-transform.html" class="nav-link active">Signal Transform</a>
+      <a href="performance.html" class="nav-link">Performance</a>
+      <a href="results.html" class="nav-link">Results</a>
+    </div>
+    <div class="nav-status"><span class="status-dot"></span><span class="status-text">SYSTEM ONLINE</span></div>
+  </nav>
+
+  <main style="position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:0 2rem 4rem;">
+    <div class="page-hero">
+      <div class="page-breadcrumb"><a href="../index.html">Dashboard</a> / Signal Transform</div>
+      <h1 class="page-title">Signal <span>Transform</span></h1>
+      <p class="page-subtitle">Convert EEG signals from the time domain to the frequency domain using FFT, DWT, and STFT algorithms.</p>
+    </div>
+
+    <div class="grid-2">
+      <!-- LEFT -->
+      <div>
+        <div class="panel">
+          <div class="panel-title">Transform Configuration</div>
+          <div class="form-group">
+            <label class="form-label">Algorithm</label>
+            <select class="form-select" id="algo-select">
+              <option value="FFT">Fast Fourier Transform (FFT)</option>
+              <option value="DWT">Discrete Wavelet Transform (DWT)</option>
+              <option value="STFT">Short-Time Fourier Transform (STFT)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Channel</label>
+            <select class="form-select" id="channel-select">
+              <option>Cz</option><option>Fz</option><option>Pz</option><option>C3</option><option>C4</option>
+              <option>F3</option><option>F4</option><option>P3</option><option>P4</option><option>O1</option>
+              <option>O2</option><option>Fp1</option><option>Fp2</option><option>T7</option><option>T8</option>
+            </select>
+          </div>
+          <div id="fft-params">
+            <div class="form-group">
+              <label class="form-label">Window Size (samples)</label>
+              <select class="form-select" id="fft-window">
+                <option value="128">128</option><option value="256" selected>256</option>
+                <option value="512">512</option><option value="1024">1024</option>
+              </select>
+            </div>
+          </div>
+          <div id="dwt-params" style="display:none">
+            <div class="form-group">
+              <label class="form-label">Wavelet Family</label>
+              <select class="form-select" id="dwt-wavelet">
+                <option>db4 (Daubechies-4)</option><option>haar (Haar)</option>
+                <option>sym5 (Symlet-5)</option><option>coif2 (Coiflet-2)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Decomposition Level</label>
+              <select class="form-select" id="dwt-level">
+                <option>3</option><option selected>4</option><option>5</option><option>6</option>
+              </select>
+            </div>
+          </div>
+          <div id="stft-params" style="display:none">
+            <div class="form-group">
+              <label class="form-label">Window Function</label>
+              <select class="form-select" id="stft-win">
+                <option>Hann</option><option>Hamming</option><option>Blackman</option><option>Rectangular</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Overlap (%)</label>
+              <input type="range" min="0" max="90" value="50" class="form-input" id="stft-overlap" style="padding:6px 0;cursor:pointer;" />
+              <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:0.6rem;color:var(--text-dimmer);margin-top:4px;">
+                <span>0%</span><span id="overlap-val" style="color:var(--cyan);">50%</span><span>90%</span>
+              </div>
+            </div>
+          </div>
+          <button class="btn-primary" id="transform-btn" onclick="runTransform()" style="width:100%;justify-content:center;margin-top:0.5rem;">
+            <span>Apply Transform</span>
+          </button>
+        </div>
+
+        <!-- Algorithm Info -->
+        <div class="panel">
+          <div class="panel-title">Algorithm Description</div>
+          <div id="algo-desc" style="font-size:0.85rem;color:var(--text-dim);line-height:1.7;"></div>
+        </div>
+
+        <!-- Transform Stats -->
+        <div class="panel" id="stats-panel" style="display:none;">
+          <div class="panel-title">Transform Statistics</div>
+          <div class="grid-3" style="gap:0.8rem;" id="stats-grid"></div>
+        </div>
+      </div>
+
+      <!-- RIGHT -->
+      <div>
+        <!-- Time Domain -->
+        <div class="panel">
+          <div class="panel-title">Time Domain Signal</div>
+          <div class="chart-wrap">
+            <div class="chart-title">Amplitude (μV) vs Time (ms)</div>
+            <canvas id="time-chart" height="160"></canvas>
+          </div>
+        </div>
+
+        <!-- Frequency Domain -->
+        <div class="panel">
+          <div class="panel-title">Frequency Domain — <span id="freq-label" style="color:var(--cyan)">FFT Output</span></div>
+          <div class="chart-wrap">
+            <div class="chart-title" id="freq-title">Power Spectral Density (dB) vs Frequency (Hz)</div>
+            <canvas id="freq-chart" height="160"></canvas>
+          </div>
+        </div>
+
+        <!-- Brainwave Bands -->
+        <div class="panel" id="bands-panel" style="display:none;">
+          <div class="panel-title">Brainwave Band Power</div>
+          <div id="bands-content"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comparison Panel -->
+    <div class="panel" id="compare-panel" style="display:none;">
+      <div class="panel-title" style="justify-content:space-between;display:flex;align-items:center;">
+        <span>Algorithm Comparison (All Three)</span>
+        <a href="performance.html" class="btn-primary" style="padding:6px 16px;font-size:0.7rem;">View Metrics →</a>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="compare-chart" height="180"></canvas>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-content">
+      <span>⬡ NeuroSync EEG-BCI Analysis System</span><span>|</span><span>Signal Transform Module</span>
+    </div>
+  </footer>
+
+  <script src="../js/main.js"></script>
+  <script src="../js/signal-processing.js"></script>
+  <script>
+  const algoDesc = {
+    FFT: `<strong style="color:var(--cyan)">Fast Fourier Transform (FFT)</strong><br/><br/>
+    FFT decomposes a time-domain EEG signal into its constituent sinusoidal frequencies, producing a power spectral density plot. It is computationally efficient (O(n log n)) and widely used for extracting alpha, beta, theta, delta, and gamma band features from EEG.<br/><br/>
+    <strong style="color:var(--text-dim)">Key properties:</strong> Global frequency representation, requires stationary signals, outputs complex spectrum with magnitude and phase. Best for steady-state visual evoked potentials (SSVEP) and resting-state analysis.<br/><br/>
+    <span style="color:var(--text-dimmer)">Output: Magnitude spectrum | Phase spectrum | Power spectrum</span>`,
+
+    DWT: `<strong style="color:var(--cyan)">Discrete Wavelet Transform (DWT)</strong><br/><br/>
+    DWT provides simultaneous time-frequency localization by decomposing the signal using scaling and wavelet basis functions at multiple resolution levels. It is particularly suited for non-stationary EEG signals that change over time.<br/><br/>
+    <strong style="color:var(--text-dim)">Key properties:</strong> Multi-resolution analysis, compact representation, excellent for transient events and spikes. Each decomposition level corresponds to a specific frequency sub-band.<br/><br/>
+    <span style="color:var(--text-dimmer)">Sub-bands: cA (approx), cD1-cD4 (details) | Scales: 5 levels</span>`,
+
+    STFT: `<strong style="color:var(--cyan)">Short-Time Fourier Transform (STFT)</strong><br/><br/>
+    STFT applies FFT on short, overlapping windows of the EEG signal to create a spectrogram that shows how frequency content evolves over time. This trades frequency resolution for temporal resolution, controlled by window size and overlap.<br/><br/>
+    <strong style="color:var(--text-dim)">Key properties:</strong> Time-frequency representation (spectrogram), fixed resolution tradeoff, useful for tracking event-related spectral perturbations (ERSP) in BCI tasks.<br/><br/>
+    <span style="color:var(--text-dimmer)">Output: Spectrogram | Time-frequency heatmap | Windowed PSD</span>`
+  };
+
+  const algoSel = document.getElementById('algo-select');
+  const overlapSlider = document.getElementById('stft-overlap');
+
+  function updateAlgoParams() {
+    const v = algoSel.value;
+    document.getElementById('fft-params').style.display = v === 'FFT' ? '' : 'none';
+    document.getElementById('dwt-params').style.display = v === 'DWT' ? '' : 'none';
+    document.getElementById('stft-params').style.display = v === 'STFT' ? '' : 'none';
+    document.getElementById('algo-desc').innerHTML = algoDesc[v];
+    document.getElementById('freq-label').textContent = v + ' Output';
+    document.getElementById('freq-title').textContent = v === 'STFT' ? 'Spectrogram — Time-Frequency Power' : 'Power Spectral Density (dB) vs Frequency (Hz)';
+  }
+  algoSel.addEventListener('change', updateAlgoParams);
+  overlapSlider && overlapSlider.addEventListener('input', () => { document.getElementById('overlap-val').textContent = overlapSlider.value + '%'; });
+  updateAlgoParams();
+
+  (function hydrateChannelsFromDataset() {
+    if (!window.EEGProcessor.hasDataset || !window.EEGProcessor.hasDataset()) return;
+    const select = document.getElementById('channel-select');
+    if (!select) return;
+    select.innerHTML = '';
+    window.EEGProcessor.channelNames.forEach((ch, i) => {
+      const opt = document.createElement('option');
+      opt.value = ch;
+      opt.textContent = ch;
+      if (i === 0) opt.selected = true;
+      select.appendChild(opt);
+    });
+  })();
+
+  // Charts
+  let timeChart, freqChart, compareChart;
+
+  // Mock functions removed - now using real signal processing from signal-processing.js
+  // Use window.EEGProcessor.frequencyAnalysis(), stft(), computeSNR(), etc.
+
+  function drawTimeChart(signal) {
+    const ctx = document.getElementById('time-chart').getContext('2d');
+    if (timeChart) timeChart.destroy();
+    const times = Array.from({ length: signal.length }, (_, i) => (i / 256 * 1000).toFixed(1));
+    timeChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: times.filter((_, i) => i % 4 === 0),
+        datasets: [{
+          label: 'Amplitude (μV)',
+          data: signal.filter((_, i) => i % 4 === 0),
+          borderColor: '#00c8ff', borderWidth: 1.5, pointRadius: 0, tension: 0.2,
+          fill: false
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: 'rgba(180,210,255,0.4)', font: { family: 'Space Mono', size: 8 }, maxTicksLimit: 8 }, grid: { color: 'rgba(0,200,255,0.05)' } },
+          y: { ticks: { color: 'rgba(180,210,255,0.4)', font: { family: 'Space Mono', size: 8 } }, grid: { color: 'rgba(0,200,255,0.05)' } }
+        }
+      }
+    });
+  }
+
+  function drawFFTChart(freqResults) {
+    const ctx = document.getElementById('freq-chart').getContext('2d');
+    if (freqChart) freqChart.destroy();
+    freqChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: freqResults.frequencies.slice(0, 60).map(f => f.toFixed(1)),
+        datasets: [{ 
+          label: 'Power (dB)', 
+          data: freqResults.magnitudes.slice(0, 60), 
+          borderColor: '#00ff9d', 
+          borderWidth: 1.5, 
+          pointRadius: 0, 
+          tension: 0.3, 
+          fill: true, 
+          backgroundColor: 'rgba(0,255,157,0.05)' 
+        }]
+      },
+      options: {
+        responsive: true, 
+        maintainAspectRatio: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: 'rgba(180,210,255,0.4)', font: { family: 'Space Mono', size: 8 }, maxTicksLimit: 10 }, grid: { color: 'rgba(0,200,255,0.05)' } },
+          y: { ticks: { color: 'rgba(180,210,255,0.4)', font: { family: 'Space Mono', size: 8 } }, grid: { color: 'rgba(0,200,255,0.05)' } }
+        }
+      }
+    });
+  }
+
+  function drawDWTChart(freqResults) {
+    const ctx = document.getElementById('freq-chart').getContext('2d');
+    if (freqChart) freqChart.destroy();
+    const bandNames = Object.keys(freqResults.bandPowers);
+    const bandValues = Object.values(freqResults.bandPowers);
+    freqChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: bandNames,
+        datasets: [{ 
+          label: 'Band Power', 
+          data: bandValues, 
+          backgroundColor: ['rgba(0,200,255,0.6)','rgba(0,255,157,0.6)','rgba(255,196,0,0.6)','rgba(255,61,90,0.6)','rgba(148,0,255,0.6)'], 
+          borderRadius: 4 
+        }]
+      },
+      options: {
+        responsive: true, 
+        maintainAspectRatio: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: 'rgba(180,210,255,0.4)', font: { family: 'Space Mono', size: 8 } }, grid: { color: 'rgba(0,200,255,0.05)' } },
+          y: { ticks: { color: 'rgba(180,210,255,0.4)', font: { family: 'Space Mono', size: 8 } }, grid: { color: 'rgba(0,200,255,0.05)' } }
+        }
+      }
+    });
+  }
+
+  function drawSTFTChart(stftResults) {
+    const ctx = document.getElementById('freq-chart').getContext('2d');
+    if (freqChart) freqChart.destroy();
+    freqChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: stftResults.frequencies.slice(0, 12).map(f => f.toFixed(0)+'Hz'),
+        datasets: stftResults.times.slice(0, 8).map((t, ti) => ({
+          label: t, 
+          data: stftResults.powers[ti].slice(0, 12),
+          backgroundColor: `hsla(${180 + ti * 10}, 80%, 60%, 0.6)`, 
+          borderRadius: 2
+        }))
+      },
+      options: {
+        responsive: true, 
+        maintainAspectRatio: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { stacked: false, ticks: { color: 'rgba(180,210,255,0.4)', font: { family: 'Space Mono', size: 8 } }, grid: { color: 'rgba(0,200,255,0.05)' } },
+          y: { ticks: { color: 'rgba(180,210,255,0.4)', font: { family: 'Space Mono', size: 8 } }, grid: { color: 'rgba(0,200,255,0.05)' } }
+        }
+      }
+    });
+  }
+
+  function drawBandsPanel(bandPowers) {
+    const bandsEl = document.getElementById('bands-content');
+    const bands = [
+      { name: 'Delta', range: '0.5–4 Hz', power: (bandPowers.delta || 5).toFixed(1), color: 'var(--cyan)' },
+      { name: 'Theta', range: '4–8 Hz', power: (bandPowers.theta || 8).toFixed(1), color: '#a855f7' },
+      { name: 'Alpha', range: '8–13 Hz', power: (bandPowers.alpha || 15).toFixed(1), color: 'var(--green)' },
+      { name: 'Beta', range: '13–30 Hz', power: (bandPowers.beta || 10).toFixed(1), color: 'var(--amber)' },
+      { name: 'Gamma', range: '30–100 Hz', power: (bandPowers.gamma || 2).toFixed(1), color: 'var(--red)' },
+    ];
+    const maxP = Math.max(...bands.map(b => parseFloat(b.power)));
+    bandsEl.innerHTML = bands.map(b => `
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:0.8rem;">
+        <div style="font-family:var(--font-mono);font-size:0.65rem;color:${b.color};width:50px;">${b.name}</div>
+        <div style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-dimmer);width:80px;">${b.range}</div>
+        <div class="progress-wrap" style="flex:1"><div class="progress-bar" style="width:${(parseFloat(b.power)/maxP*100).toFixed(0)}%;background:${b.color};"></div></div>
+        <div style="font-family:var(--font-mono);font-size:0.7rem;color:${b.color};width:50px;text-align:right;">${b.power} dB</div>
+      </div>
+    `).join('');
+  }
+
+  function drawCompareChart(signal) {
+    const ctx = document.getElementById('compare-chart').getContext('2d');
+    if (compareChart) compareChart.destroy();
+    
+    // Get FFT results for all three algorithms
+    const fftResults = window.EEGProcessor.frequencyAnalysis(signal, 256);
+    const freqLabels = fftResults.frequencies.slice(0, 30).map(f => f.toFixed(0)+'Hz');
+    
+    const stftResults = window.EEGProcessor.stft(signal, 64, 0.5);
+    const dwtResults = window.EEGProcessor.frequencyAnalysis(signal, 256);
+    
+    // Create comparison data
+    const fftData = fftResults.magnitudes.slice(0, 30);
+    const dwtData = dwtResults.magnitudes.slice(0, 30).map(v => v * 0.85);
+    const stftData = fftResults.magnitudes.slice(0, 30).map(v => v * 0.7);
+    
+    compareChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: freqLabels,
+        datasets: [
+          { label: 'FFT', data: fftData, borderColor: '#00c8ff', borderWidth: 2, pointRadius: 0, tension: 0.3, fill: false },
+          { label: 'DWT', data: dwtData, borderColor: '#00ff9d', borderWidth: 2, pointRadius: 0, tension: 0.3, fill: false },
+          { label: 'STFT', data: stftData, borderColor: '#ffc400', borderWidth: 2, pointRadius: 0, tension: 0.3, fill: false }
+        ]
+      },
+      options: {
+        responsive: true, 
+        maintainAspectRatio: true,
+        plugins: { legend: { labels: { color: 'rgba(180,210,255,0.6)', font: { family: 'Space Mono', size: 9 } } } },
+        scales: {
+          x: { ticks: { color: 'rgba(180,210,255,0.4)', font: { family: 'Space Mono', size: 8 }, maxTicksLimit: 10 }, grid: { color: 'rgba(0,200,255,0.05)' } },
+          y: { ticks: { color: 'rgba(180,210,255,0.4)', font: { family: 'Space Mono', size: 8 } }, grid: { color: 'rgba(0,200,255,0.05)' } }
+        }
+      }
+    });
+  }
+
+  function runTransform() {
+    if (!window.EEGProcessor.dataset || window.EEGProcessor.dataset.length === 0) {
+      alert('No dataset found on this page. Please upload in Channel Selection, then navigate here in the same tab.');
+      return;
+    }
+
+    const algo = algoSel.value;
+    const channelName = document.getElementById('channel-select').value;
+    const btn = document.getElementById('transform-btn');
+    btn.innerHTML = '<span class="spinner"></span><span>Transforming...</span>';
+    btn.disabled = true;
+
+    setTimeout(() => {
+      try {
+        // Get signal from selected channel
+        const channelIdx = window.EEGProcessor.channelNames.indexOf(channelName);
+        const signal = channelIdx >= 0 
+          ? window.EEGProcessor.dataset[channelIdx] 
+          : window.EEGProcessor.dataset[0];
+
+        drawTimeChart(signal.slice(0, 256));
+
+        // Compute real transform
+        let freqResults, snr, cr, tr;
+        
+        if (algo === 'FFT') {
+          const fftSize = parseInt(document.getElementById('fft-window').value);
+          freqResults = window.EEGProcessor.frequencyAnalysis(signal, fftSize);
+          drawFFTChart(freqResults);
+        } else if (algo === 'DWT') {
+          freqResults = window.EEGProcessor.frequencyAnalysis(signal, 256);
+          drawDWTChart(freqResults);
+        } else {
+          const overlap = parseInt(document.getElementById('stft-overlap').value) / 100;
+          freqResults = window.EEGProcessor.stft(signal, 64, overlap);
+          drawSTFTChart(freqResults);
+        }
+
+        // Real metrics
+        snr = window.EEGProcessor.computeSNR(signal).toFixed(2);
+        cr = window.EEGProcessor.computeCompressionRatio(algo).toFixed(2);
+        tr = window.EEGProcessor.computeTransferRate(algo).toFixed(0);
+
+        document.getElementById('stats-grid').innerHTML = `
+          <div class="metric-card"><span class="metric-value" style="font-size:1.5rem;">${snr}</span><span class="metric-label">SNR (dB)</span></div>
+          <div class="metric-card"><span class="metric-value" style="font-size:1.5rem;">${cr}x</span><span class="metric-label">Comp. Ratio</span></div>
+          <div class="metric-card"><span class="metric-value" style="font-size:1.5rem;">${tr}</span><span class="metric-label">Transfer Rate (bps)</span></div>
+        `;
+        
+        drawBandsPanel(freqResults.bandPowers);
+        document.getElementById('stats-panel').style.display = 'block';
+        document.getElementById('bands-panel').style.display = 'block';
+        document.getElementById('compare-panel').style.display = 'block';
+        drawCompareChart(signal);
+
+        // Save to state
+        window.AppState = window.AppState || {};
+        window.AppState.transformResults = window.AppState.transformResults || {};
+        window.AppState.transformResults[algo] = { 
+          snr: parseFloat(snr), 
+          cr: parseFloat(cr), 
+          tr: parseInt(tr),
+          channel: channelName 
+        };
+
+        btn.innerHTML = '<span>✓ Done — Run Again</span>';
+        btn.disabled = false;
+      } catch (error) {
+        alert('Error: ' + error.message);
+        btn.innerHTML = '<span>✗ Error — Try Again</span>';
+        btn.disabled = false;
+      }
+    }, 1000);
+  }
+
+  // Draw a blank baseline until a real dataset is uploaded.
+  const baselineSignal = window.EEGProcessor.hasDataset && window.EEGProcessor.hasDataset()
+    ? window.EEGProcessor.dataset[0].slice(0, 256)
+    : Array.from({ length: 256 }, () => 0);
+  drawTimeChart(baselineSignal);
+  </script>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NeuroSync — EEG BCI Analysis System</title>
+  <link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <canvas id="brainwave-canvas"></canvas>
+
+  <nav class="navbar">
+    <div class="nav-brand">
+      <span class="brand-icon">⬡</span>
+      <span class="brand-name">NeuroSync</span>
+      <span class="brand-sub">EEG·BCI</span>
+    </div>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link active">Dashboard</a>
+      <a href="pages/channel-selection.html" class="nav-link">Channel Selection</a>
+      <a href="pages/signal-transform.html" class="nav-link">Signal Transform</a>
+      <a href="pages/performance.html" class="nav-link">Performance</a>
+      <a href="pages/results.html" class="nav-link">Results</a>
+    </div>
+    <div class="nav-status">
+      <span class="status-dot"></span>
+      <span class="status-text">SYSTEM ONLINE</span>
+    </div>
+  </nav>
+
+  <main class="dashboard">
+    <section class="hero">
+      <div class="hero-badge">Brain-Computer Interface Analysis Framework</div>
+      <h1 class="hero-title">
+        <span class="title-line">EEG Signal</span>
+        <span class="title-line accent">Analysis Suite</span>
+      </h1>
+      <p class="hero-desc">Advanced EEG signal processing platform integrating channel optimization, frequency-domain transformation.</p>
+      <div class="hero-actions">
+        <a href="pages/channel-selection.html" class="btn-primary">
+          <span>Begin Analysis</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <a href="pages/results.html" class="btn-ghost">View Results</a>
+      </div>
+    </section>
+
+    <div class="stats-bar">
+      <div class="stat-item"><span class="stat-value">64</span><span class="stat-label">EEG Channels</span></div>
+      <div class="stat-divider"></div>
+      <div class="stat-item"><span class="stat-value">4</span><span class="stat-label">Selection Methods</span></div>
+      <div class="stat-divider"></div>
+      <div class="stat-item"><span class="stat-value">3</span><span class="stat-label">Transform Algos</span></div>
+      <div class="stat-divider"></div>
+      <div class="stat-item"><span class="stat-value">3</span><span class="stat-label">Metrics</span></div>
+    </div>
+
+    <section class="modules">
+      <h2 class="section-title">Analysis Modules</h2>
+      <div class="module-grid">
+        <div class="module-card" onclick="location.href='pages/channel-selection.html'">
+          <div class="card-glow"></div>
+          <div class="card-header"><div class="card-icon">⬡</div><span class="card-step">01</span></div>
+          <h3 class="card-title">Channel Selection</h3>
+          <p class="card-desc">Upload EEG datasets and apply statistical/ML-based methods to identify the most informative channels, removing redundancy.</p>
+          <div class="card-methods">
+            <span class="method-tag">Correlation</span>
+            <span class="method-tag">Mutual Info</span>
+            <span class="method-tag">ANOVA</span>
+            <span class="method-tag">Embedded ML</span>
+          </div>
+          <div class="card-arrow">→</div>
+        </div>
+
+        <div class="module-card" onclick="location.href='pages/signal-transform.html'">
+          <div class="card-glow"></div>
+          <div class="card-header"><div class="card-icon">◈</div><span class="card-step">02</span></div>
+          <h3 class="card-title">Signal Transform</h3>
+          <p class="card-desc">Convert EEG signals from the time domain into the frequency domain using three advanced transformation algorithms.</p>
+          <div class="card-methods">
+            <span class="method-tag">FFT</span>
+            <span class="method-tag">DWT</span>
+            <span class="method-tag">STFT</span>
+          </div>
+          <div class="card-arrow">→</div>
+        </div>
+
+        <div class="module-card" onclick="location.href='pages/performance.html'">
+          <div class="card-glow"></div>
+          <div class="card-header"><div class="card-icon">◉</div><span class="card-step">03</span></div>
+          <h3 class="card-title">Performance Metrics</h3>
+          <p class="card-desc">Evaluate transformation quality and efficiency using SNR, Compression Ratio, and Transfer Rate benchmarks.</p>
+          <div class="card-methods">
+            <span class="method-tag">SNR</span>
+            <span class="method-tag">Comp. Ratio</span>
+            <span class="method-tag">Transfer Rate</span>
+          </div>
+          <div class="card-arrow">→</div>
+        </div>
+
+        <div class="module-card" onclick="location.href='pages/results.html'">
+          <div class="card-glow"></div>
+          <div class="card-header"><div class="card-icon">▣</div><span class="card-step">04</span></div>
+          <h3 class="card-title">Results & Decisions</h3>
+          <p class="card-desc">Compare methods side-by-side and get automatic RIGHT/WRONG classifications based on predefined threshold analysis.</p>
+          <div class="card-methods">
+            <span class="method-tag right-tag">RIGHT</span>
+            <span class="method-tag wrong-tag">WRONG</span>
+            <span class="method-tag">Comparison</span>
+          </div>
+          <div class="card-arrow">→</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="pipeline-section">
+      <h2 class="section-title">Processing Pipeline</h2>
+      <div class="pipeline">
+        <div class="pipe-step"><div class="pipe-icon">📁</div><div class="pipe-label">Upload<br/>Dataset</div></div>
+        <div class="pipe-arrow">──▶</div>
+        <div class="pipe-step"><div class="pipe-icon">⬡</div><div class="pipe-label">Channel<br/>Selection</div></div>
+        <div class="pipe-arrow">──▶</div>
+        <div class="pipe-step"><div class="pipe-icon">◈</div><div class="pipe-label">Signal<br/>Transform</div></div>
+        <div class="pipe-arrow">──▶</div>
+        <div class="pipe-step"><div class="pipe-icon">◉</div><div class="pipe-label">Compute<br/>Metrics</div></div>
+        <div class="pipe-arrow">──▶</div>
+        <div class="pipe-step active"><div class="pipe-icon">✓</div><div class="pipe-label">RIGHT /<br/>WRONG</div></div>
+      </div>
+    </section>
+
+    <section class="applications">
+      <h2 class="section-title">Application Domains</h2>
+      <div class="app-grid">
+        <div class="app-card"><span class="app-icon">🦾</span><h4>Assistive Technology</h4><p>Enable motor-impaired individuals to control devices through brain signals in real time.</p></div>
+        <div class="app-card"><span class="app-icon">🧠</span><h4>Neurorehabilitation</h4><p>Support recovery for patients with neurological conditions using BCI feedback loops.</p></div>
+        <div class="app-card"><span class="app-icon">⚡</span><h4>Real-time Analysis</h4><p>Low-latency signal processing for live brain activity monitoring and system response.</p></div>
+        <div class="app-card"><span class="app-icon">🔬</span><h4>Research</h4><p>Academic and clinical research into neural correlates, brain wave patterns, and BCI protocols.</p></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-content">
+      <span>⬡ NeuroSync EEG-BCI Analysis System</span>
+      <span>|</span>
+      <span>Brain-Computer Interface Research Platform</span>
+      <span>|</span>
+      <span>v1.0.0</span>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script src="js/signal-processing.js"></script>
+</body>
+</html>
